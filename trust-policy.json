@@ -4,13 +4,13 @@
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::982424467695:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/39988A0C96597AC9793F0BFA9DDB4065"
+        "Federated": "arn:aws:iam::150965600049:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/DE1F19F65A6E9BDA08231BF738049D20"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "oidc.eks.ap-south-1.amazonaws.com/id/39988A0C96597AC9793F0BFA9DDB4065:aud": "sts.amazonaws.com",
-          "oidc.eks.ap-south-1.amazonaws.com/id/39988A0C96597AC9793F0BFA9DDB4065:sub": "system:serviceaccount:task-management:notification-service-sa"
+          "oidc.eks.ap-south-1.amazonaws.com/id/DE1F19F65A6E9BDA08231BF738049D20:aud": "sts.amazonaws.com",
+          "oidc.eks.ap-south-1.amazonaws.com/id/DE1F19F65A6E9BDA08231BF738049D20:sub": "system:serviceaccount:task-management:notification-service-sa"
         }
       }
     }

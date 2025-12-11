@@ -96,11 +96,14 @@ echo "Domain: $DOMAIN_NAME"
 eksctl create cluster \
   --name $CLUSTER_NAME \
   --region $AWS_REGION \
+  --version 1.33 \
+  --zones=ap-south-1a,ap-south-1b \
   --nodegroup-name workers \
-  --node-type t3.medium \
-  --nodes 2 \
-  --nodes-min 1 \
-  --nodes-max 3 \
+  --node-type t3.small \
+  --node-ami-family=AmazonLinux2023 \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 5 \
   --managed
 
 # Verify cluster is ready
@@ -129,14 +132,13 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 ## Step 4: Build and Push Docker Images
 
 ```bash
-export REGISTRY=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+export REGISTRY="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 # Build and push all services (use --platform linux/amd64 for ARM Macs)
 for SERVICE in frontend user-service task-service notification-service; do
-  echo "Building $SERVICE..."
-  docker buildx build --platform linux/amd64 --load -t task-management/$SERVICE ./$SERVICE
-  docker tag task-management/$SERVICE:latest $REGISTRY/task-management/$SERVICE:latest
-  docker push $REGISTRY/task-management/$SERVICE:latest
+  docker buildx build --platform linux/amd64 --load -t "task-management/${SERVICE}" "./${SERVICE}" && \
+  docker tag "task-management/${SERVICE}:latest" "${REGISTRY}/task-management/${SERVICE}:latest" && \
+  docker push "${REGISTRY}/task-management/${SERVICE}:latest"
 done
 
 echo "All images pushed to ECR!"
@@ -189,7 +191,7 @@ aws ses verify-email-identity --email-address $SES_EMAIL --region $AWS_REGION
 
 echo "Check your inbox ($SES_EMAIL) and click the verification link!"
 
-# Verify status (wait for verification)
+# Verify status (wait for verification - check your registered email)
 aws ses get-identity-verification-attributes --identities $SES_EMAIL --region $AWS_REGION
 ```
 
@@ -636,3 +638,65 @@ kubectl exec -it deployment/notification-service -n task-management -- \
 - ✅ MongoDB, PostgreSQL, Redis databases
 - ✅ React frontend with Material UI
 - ✅ Node.js microservices (user, task, notification)
+
+
+## After running the kubectl apply -f k8s-deployment.yml 
+kirankumar@Kirans-MacBook-Air-2 task-management-eks-demo % kubectl apply -f k8s-deployment.yaml
+namespace/task-management created
+configmap/app-config created
+secret/app-secrets created
+deployment.apps/mongodb created
+service/mongodb-service created
+deployment.apps/postgres created
+service/postgres-service created
+deployment.apps/redis created
+service/redis-service created
+deployment.apps/user-service created
+service/user-service created
+deployment.apps/task-service created
+service/task-service created
+serviceaccount/notification-service-sa created
+deployment.apps/notification-service created
+service/notification-service created
+deployment.apps/frontend created
+service/frontend-service created
+ingress.networking.k8s.io/task-management-ingress created
+
+## kubectl get all -n task-management 
+kirankumar@Kirans-MacBook-Air-2 task-management-eks-demo % kubectl get all -n task-management  
+NAME                                       READY   STATUS             RESTARTS   AGE
+pod/frontend-b555bdff8-j8nns               0/1     ImagePullBackOff   0          3m5s
+pod/mongodb-69777fff56-r8mkn               1/1     Running            0          3m7s
+pod/notification-service-7bd4b74c6-r92x4   0/1     ImagePullBackOff   0          3m6s
+pod/postgres-74f74549fc-s4vgd              1/1     Running            0          3m7s
+pod/redis-77496c6479-hhd29                 1/1     Running            0          3m6s
+pod/task-service-7596f9f9c5-zpqf9          0/1     ImagePullBackOff   0          3m6s
+pod/user-service-857c59fd55-c8r6z          0/1     ImagePullBackOff   0          3m6s
+
+NAME                           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
+service/frontend-service       ClusterIP   10.100.55.113    <none>        80/TCP      3m5s
+service/mongodb-service        ClusterIP   10.100.132.35    <none>        27017/TCP   3m7s
+service/notification-service   ClusterIP   10.100.238.105   <none>        3003/TCP    3m6s
+service/postgres-service       ClusterIP   10.100.75.170    <none>        5432/TCP    3m7s
+service/redis-service          ClusterIP   10.100.217.161   <none>        6379/TCP    3m6s
+service/task-service           ClusterIP   10.100.171.99    <none>        3002/TCP    3m6s
+service/user-service           ClusterIP   10.100.164.35    <none>        3001/TCP    3m6s
+
+NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/frontend               0/1     1            0           3m5s
+deployment.apps/mongodb                1/1     1            1           3m7s
+deployment.apps/notification-service   0/1     1            0           3m6s
+deployment.apps/postgres               1/1     1            1           3m7s
+deployment.apps/redis                  1/1     1            1           3m6s
+deployment.apps/task-service           0/1     1            0           3m6s
+deployment.apps/user-service           0/1     1            0           3m6s
+
+NAME                                             DESIRED   CURRENT   READY   AGE
+replicaset.apps/frontend-b555bdff8               1         1         0       3m5s
+replicaset.apps/mongodb-69777fff56               1         1         1       3m7s
+replicaset.apps/notification-service-7bd4b74c6   1         1         0       3m6s
+replicaset.apps/postgres-74f74549fc              1         1         1       3m7s
+replicaset.apps/redis-77496c6479                 1         1         1       3m6s
+replicaset.apps/task-service-7596f9f9c5          1         1         0       3m6s
+replicaset.apps/user-service-857c59fd55          1         1         0       3m6s
+kirankumar@Kirans-MacBook-Air-2 task-management-eks-demo % kubectl get all -n task-management

@@ -1,7 +1,7 @@
-aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 982424467695.dkr.ecr.ap-south-1.amazonaws.com
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
 
 
-export REGISTRY=982424467695.dkr.ecr.ap-south-1.amazonaws.com
+export REGISTRY=$ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
 
 docker buildx build --platform linux/amd64 --load -t task-management/frontend ./frontend
 docker tag task-management/frontend:latest $REGISTRY/task-management/frontend:latest
